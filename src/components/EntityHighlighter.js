@@ -43,6 +43,7 @@ export const EntityHighlighter = () => {
 
   const [{selectionStart, selectionEnd}, setSelection] = useState({ selectionStart: 0, selectionEnd: 0});
   const [text, setText] = useState('Venture first mover advantage learning curve market ecosystem funding stealth disruptive social proof scrum project growth hacking niche market user experience graphical user interface.');
+  const [inputText, setInputText] = useState('');
   const [entities, setEntities] = useState([
     { start: 160, end: 184, label: 'very important'},
     { start: 144, end: 159, label: 'very important'},
@@ -60,8 +61,6 @@ export const EntityHighlighter = () => {
 
   const selectionChangeHandler = (event) => {
     const target = event.target;
-    console.log({target, inputNode});
-
 
     if (
       target === inputNode.current
@@ -78,7 +77,6 @@ export const EntityHighlighter = () => {
     const newEntities = [];
 
     // update the entity boudaries
-
     entities.forEach(oldEntity => {
       const oldSelection = text.substr(oldEntity.start, oldEntity.end - oldEntity.start);
 
@@ -126,15 +124,15 @@ export const EntityHighlighter = () => {
     return entities.filter(e => e.start <= index && e.end > index);
   };
 
-  const renderEntityHighlight = (text, entity, key) => {
+  const renderEntityHighlight = (text, entity) => {
     const start = text.substr(0, entity.start);
     const value = text.substr(entity.start, entity.end - entity.start);
     const end = text.substr(entity.end);
     const color = colors[hashString(entity.label) % colors.length].bg;
     return (
-      <div key={key} style={{ ...styles.zeroPos, ...styles.highlightText }}>
+      <div key={hashString(entity.label)} style={{ ...styles.zeroPos, ...styles.highlightText }}>
         <span>{start}</span>
-        <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
+        <span style={{ opacity: 0.3, backgroundColor: color }}>{value} Prueba</span>
         <span>{end}</span>
       </div>
     );
@@ -159,15 +157,15 @@ export const EntityHighlighter = () => {
           value={text}
           rows={10}
         />
-        {entities.map((entity, index) => renderEntityHighlight(text, entity, index))}
+        {entities.map(entity => renderEntityHighlight(text, entity))}
       </div>
       <br />
       <div>
         <input
           type="text"
           placeholder="Entity label"
-          value={text}
-          onChange={(event) => this.setState({ text: event.target.value })}
+          value={inputText}
+          onChange={(event) => setInputText(event.target.value)}
           disabled={selectionStart === selectionEnd}
 
         />
