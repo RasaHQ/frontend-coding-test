@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 import logo from './rasa.svg';
-import EntityHighlighter from './EntityHighlighter';
+import { EntityHighlighter } from './EntityHighlighter';
 
 const styles = {
   app: {
@@ -52,11 +52,7 @@ class App extends Component {
           </p>
         </section>
         <section>
-          <EntityHighlighter
-            text={this.state.text}
-            entities={this.state.entities}
-            onChange={(text, entities) => this.setState({ text, entities })}
-          />
+          <EntityHighlighter />
         </section>
       </div>
     );

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { colors } from "./colors";
 
 const styles = {
   text: {},
@@ -26,21 +27,6 @@ const styles = {
   },
 };
 
-const colors = [
-  { name: 'blue', bg: '#0074d9' },
-  { name: 'navy', bg: '#001f3f' },
-  { name: 'lime', bg: '#01ff70' },
-  { name: 'teal', bg: '#39cccc' },
-  { name: 'olive', bg: '#3d9970' },
-  { name: 'fuchsia', bg: '#f012be' },
-  { name: 'red', bg: '#ff4136' },
-  { name: 'green', bg: '#2ecc40' },
-  { name: 'orange', bg: '#ff851b' },
-  { name: 'maroon', bg: '#85144b' },
-  { name: 'purple', bg: '#b10dc9' },
-  { name: 'yellow', bg: '#ffdc00' },
-  { name: 'aqua', bg: '#7fdbff' },
-];
 
 function hashString(str) {
   let hash = 0;
@@ -53,45 +39,48 @@ function hashString(str) {
   return hash > 0 ? hash : -hash;
 }
 
-class EntityHighlighter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { selectionStart: 0, selectionEnd: 0, text: '' };
+export const EntityHighlighter = () => {
+
+  const [{selectionStart, selectionEnd}, setSelection] = useState({ selectionStart: 0, selectionEnd: 0});
+  const [text, setText] = useState('Venture first mover advantage learning curve market ecosystem funding stealth disruptive social proof scrum project growth hacking niche market user experience graphical user interface.');
+  const [entities, setEntities] = useState([
+    { start: 160, end: 184, label: 'very important'},
+    { start: 144, end: 159, label: 'very important'},
+    { start: 62, end: 69, label: 'important' },
+    { start: 116, end: 130, label: 'nonsense' },
+    { start: 8, end: 29, label: 'nonsense' },
+  ]);
+
+  const inputNode = useRef(null);
+
+  const onChange = (text, entities) => {
+    setText(text);
+    setEntities(entities);
   }
 
-  componentDidMount() {
-    this.selectionChangeHandler = (event) => {
-      const target = event.target;
+  const selectionChangeHandler = (event) => {
+    const target = event.target;
+    console.log({target, inputNode});
 
-      if (
-        target === this.inputNode
-      ) {
-        this.setState({
-          selectionStart: this.inputNode.selectionStart,
-          selectionEnd: this.inputNode.selectionEnd
-        });
-      }
-    };
-    document.addEventListener('select', this.selectionChangeHandler, false);
-    document.addEventListener('click', this.selectionChangeHandler, false);
-    document.addEventListener('keydown', this.selectionChangeHandler, false);
-  }
 
-  componentWillUnmount() {
-    document.removeEventListener('select', this.selectionChangeHandler);
-    document.removeEventListener('click', this.selectionChangeHandler);
-    document.removeEventListener('keydown', this.selectionChangeHandler);
-  }
+    if (
+      target === inputNode.current
+    ) {
+      setSelection({
+        selectionStart: inputNode.current.selectionStart,
+        selectionEnd: inputNode.current.selectionEnd
+      });
+    }
+  };
 
-  handleTextChange(event) {
-    const { text: oldText, entities: oldEntities, onChange } = this.props;
-    const text = event.target.value;
-    const entities = [];
+  const handleTextChange = (event) => {
+    const newText = event.target.value;
+    const newEntities = [];
 
     // update the entity boudaries
 
-    oldEntities.forEach(oldEntity => {
-      const oldSelection = oldText.substr(oldEntity.start, oldEntity.end - oldEntity.start);
+    entities.forEach(oldEntity => {
+      const oldSelection = text.substr(oldEntity.start, oldEntity.end - oldEntity.start);
 
       function findClosestStart(lastMatch) {
         if (lastMatch == null) {
@@ -113,30 +102,31 @@ class EntityHighlighter extends React.Component {
         }
         return findClosestStart(index);
       }
+
       const start = findClosestStart();
       if (start === -1) {
         return;
       }
 
-      entities.push({
+      newEntities.push({
         ...oldEntity,
         start,
         end: start + oldSelection.length,
       });
     });
 
-    onChange(text, entities);
+    onChange(newText, newEntities);
   }
 
-  focus() {
-    if (this.inputNode) this.inputNode.focus();
+  const focus = () => {
+    if (inputNode) inputNode.focus();
   }
 
-  findEntities = (index) => {
-    return this.props.entities.filter(e => e.start <= index && e.end > index);
+  const findEntities = (index) => {
+    return entities.filter(e => e.start <= index && e.end > index);
   };
 
-  renderEntityHighlight = (text, entity, key) => {
+  const renderEntityHighlight = (text, entity, key) => {
     const start = text.substr(0, entity.start);
     const value = text.substr(entity.start, entity.end - entity.start);
     const end = text.substr(entity.end);
@@ -150,64 +140,58 @@ class EntityHighlighter extends React.Component {
     );
   };
 
-  deleteEntity = (entity) => {
-    const entities = this.props.entities;
-    const deleted = this.props.entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
+  const deleteEntity = (entity) => {
+    const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
     entities.splice(deleted, 1);
-    this.props.onChange(this.props.text, entities);
+    onChange(text, entities);
   }
 
-  render() {
-    const { text, entities = [] } = this.props;
-
-    return (
-      <div>
-        <div style={{ position: 'relative' }}>
-          <textarea
-            style={styles.input}
-            ref={node => {
-              if (node) {
-                this.inputNode = node;
-              }
-            }}
-            onChange={event => this.handleTextChange(event)}
-            value={text}
-            rows={10}
-          />
-          {entities.map((entity, index) => this.renderEntityHighlight(text, entity, index))}
-        </div>
-        <br />
-        <div>
-          <input
-            type="text"
-            placeholder="Entity label"
-            value={this.state.text}
-            onChange={(event) => this.setState({ text: event.target.value })}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
-          />
-          <button
-            onClick={() => this.props.onChange(text, entities.concat({ start: this.state.selectionStart, end: this.state.selectionEnd, label: this.state.text }))}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
-          >Add entity for selection</button>
-        </div>
-        {this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            {this.findEntities(this.state.selectionStart).map((e,i) => (
-              <span key={i}>
-                {this.props.text.substring(e.start, e.end)} ({e.label})
-                <button
-                  style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
-                  onClick={() => this.deleteEntity(e)}
-                >
-                  <span role="img" aria-label="Delete">🗑️</span>
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+  return (
+    <div>
+      <div style={{ position: 'relative' }}>
+        <textarea
+          style={styles.input}
+          ref={inputNode}
+          onChange={event => handleTextChange(event)}
+          onSelect={selectionChangeHandler}
+          onKeyDown={selectionChangeHandler}
+          onClick={selectionChangeHandler}
+          value={text}
+          rows={10}
+        />
+        {entities.map((entity, index) => renderEntityHighlight(text, entity, index))}
       </div>
-    );
-  }
-}
+      <br />
+      <div>
+        <input
+          type="text"
+          placeholder="Entity label"
+          value={text}
+          onChange={(event) => this.setState({ text: event.target.value })}
+          disabled={selectionStart === selectionEnd}
 
-export default EntityHighlighter;
+        />
+        <button
+          onClick={() => onChange(text, entities.concat({ start: selectionStart, end: selectionEnd, label: text }))}
+          disabled={selectionStart === selectionEnd}
+        >Add entity for selection</button>
+      </div>
+      {selectionStart === selectionEnd && findEntities(selectionStart).length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          {findEntities(selectionStart).map((e,i) => (
+            <span key={i}>
+              {text.substring(e.start, e.end)} ({e.label})
+              <button
+                style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
+                onClick={() => deleteEntity(e)}
+              >
+                <span role="img" aria-label="Delete">🗑️</span>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+}
