@@ -77,39 +77,40 @@ export const EntityHighlighter = () => {
     const newEntities = [];
 
     // update the entity boudaries
-    entities.forEach(oldEntity => {
-      const oldSelection = text.substr(oldEntity.start, oldEntity.end - oldEntity.start);
+    entities.forEach(({start, end, label}) => {
+      const oldSelection = text.substr(start, end - start);
 
       function findClosestStart(lastMatch) {
         if (lastMatch == null) {
-          const index = text.indexOf(oldSelection);
+          const index = newText.indexOf(oldSelection);
           if (index === -1) {
             return index;
           }
           return findClosestStart(index);
         }
         const from = lastMatch + oldSelection.length;
-        const index = text.indexOf(oldSelection, from);
+        const index = newText.indexOf(oldSelection, from);
         if (index === -1) {
           return lastMatch;
         }
-        const prevDiff = Math.abs(oldEntity.start - lastMatch);
-        const nextDiff = Math.abs(oldEntity.start - index);
+        const prevDiff = Math.abs(start - lastMatch);
+        const nextDiff = Math.abs(start - index);
         if (prevDiff < nextDiff) {
           return lastMatch;
         }
         return findClosestStart(index);
       }
 
-      const start = findClosestStart();
-      if (start === -1) {
+      const newStart = findClosestStart();
+      console.log({newStart, end: newStart + oldSelection.length});
+      if (newStart === -1) {
         return;
       }
 
       newEntities.push({
-        ...oldEntity,
-        start,
-        end: start + oldSelection.length,
+        label,
+        start: newStart,
+        end: newStart + oldSelection.length,
       });
     });
 
@@ -117,7 +118,7 @@ export const EntityHighlighter = () => {
   }
 
   const focus = () => {
-    if (inputNode) inputNode.focus();
+    if (inputNode.current) inputNode.current.focus();
   }
 
   const findEntities = (index) => {
@@ -125,15 +126,16 @@ export const EntityHighlighter = () => {
   };
 
   const renderEntityHighlight = (text, entity) => {
-    const start = text.substr(0, entity.start);
-    const value = text.substr(entity.start, entity.end - entity.start);
-    const end = text.substr(entity.end);
-    const color = colors[hashString(entity.label) % colors.length].bg;
+    const { start, end, label } = entity;
+    const highlightStart = text.substr(0, start);
+    const value = text.substr(start, end - start);
+    const highlightEnd = text.substr(end);
+    const color = colors[hashString(label) % colors.length].bg;
     return (
-      <div key={hashString(entity.label)} style={{ ...styles.zeroPos, ...styles.highlightText }}>
-        <span>{start}</span>
-        <span style={{ opacity: 0.3, backgroundColor: color }}>{value} Prueba</span>
-        <span>{end}</span>
+      <div key={`${start}-${end}-${label}`} style={{ ...styles.zeroPos, ...styles.highlightText }}>
+        <span>{highlightStart}</span>
+        <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
+        <span>{highlightEnd}</span>
       </div>
     );
   };
@@ -170,7 +172,10 @@ export const EntityHighlighter = () => {
 
         />
         <button
-          onClick={() => onChange(text, entities.concat({ start: selectionStart, end: selectionEnd, label: text }))}
+          onClick={() => {
+            onChange(text, entities.concat({ start: selectionStart, end: selectionEnd, label: inputText }));
+            focus();
+          }}
           disabled={selectionStart === selectionEnd}
         >Add entity for selection</button>
       </div>
