@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { colors } from "./colors";
-import { findClosestStart } from './findClosestStart';
+import { colors } from "./utils/colors";
+import { findClosestStart } from './utils/findClosestStart';
 
 const styles = {
   text: {},
@@ -75,7 +75,8 @@ export const EntityHighlighter = () => {
     // update the entity boudaries
     entities.forEach(({start, end, label}) => {
       const oldSelection = text.substr(start, end - start);
-      const newStart = findClosestStart(text, oldSelection, start);
+
+      const newStart = findClosestStart(newText, oldSelection, start);
       if (newStart === -1) {
         return;
       }
@@ -113,8 +114,6 @@ export const EntityHighlighter = () => {
   };
 
   const deleteEntity = ({start, end, label}) => {
-    console.log({entities});
-    console.log({start, end, label});
     const newEntities = entities.filter(e => e.start !== start && e.end !== end && e.label !== label);
     setEntities(newEntities);
   }
@@ -152,7 +151,7 @@ export const EntityHighlighter = () => {
           disabled={selectionStart === selectionEnd}
         >Add entity for selection</button>
       </div>
-      {selectionStart === selectionEnd && findEntities(selectionStart).length > 0 && (
+      {findEntities(selectionStart).length > 0 && (
         <div style={{ marginTop: 10 }}>
           {findEntities(selectionStart).map((e,i) => (
             <span key={i}>
