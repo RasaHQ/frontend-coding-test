@@ -1,5 +1,4 @@
 export const findClosestStart = (text, oldSelection, start, lastMatch = null) => {
-  console.log({text, oldSelection, start})
   if (lastMatch == null) {
     const index = text.indexOf(oldSelection);
     if (index === -1) {
