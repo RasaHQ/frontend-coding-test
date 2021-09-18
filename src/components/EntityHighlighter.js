@@ -74,7 +74,6 @@ function EntityHighlighter({ text, entities, onChange }) {
   const inputNode = React.useRef(null);
 
   const selectionChangeHandler = (event) => {
-    console.log('TCL: ~ selectionChangeHandler ~ inputNode', inputNode)
     if (
       event.target === inputNode.current
     ) {
