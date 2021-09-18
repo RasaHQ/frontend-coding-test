@@ -82,18 +82,6 @@ class EntityHighlighter extends React.Component {
   state = { selectionStart: 0, selectionEnd: 0, text: '' };
 
   componentDidMount() {
-    this.selectionChangeHandler = (event) => {
-      const target = event.target;
-
-      if (
-        target === this.inputNode
-      ) {
-        this.setState({
-          selectionStart: this.inputNode.selectionStart,
-          selectionEnd: this.inputNode.selectionEnd
-        });
-      }
-    };
     document.addEventListener('select', this.selectionChangeHandler, false);
     document.addEventListener('click', this.selectionChangeHandler, false);
     document.addEventListener('keydown', this.selectionChangeHandler, false);
@@ -104,6 +92,17 @@ class EntityHighlighter extends React.Component {
     document.removeEventListener('click', this.selectionChangeHandler);
     document.removeEventListener('keydown', this.selectionChangeHandler);
   }
+
+  selectionChangeHandler = (event) => {
+    if (
+      event.target === this.inputNode
+    ) {
+      this.setState({
+        selectionStart: this.inputNode.selectionStart,
+        selectionEnd: this.inputNode.selectionEnd
+      });
+    }
+  };
 
   handleTextChange(event) {
     const { text: oldText, entities: oldEntities, onChange } = this.props;
