@@ -25,6 +25,11 @@ const styles = {
     width: '100%',
     resize: 'none',
   },
+  deleteButton: { 
+    border: '0 none', 
+    cursor: 'pointer', 
+    backgroundColor: 'transparent' 
+  },
 };
 
 const colors = [
@@ -143,11 +148,9 @@ class EntityHighlighter extends React.Component {
     this.props.onChange(this.props.text, deleteEntity(entity, this.props.entities));
   };
 
-  deleteEntity = (entity) => {
-    const { entities, onChange, text } = this.props;
-    const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
-    onChange(text, entities.filter((_, i) => i !== deleted));
-  }
+  shouldDisplaySelectedEntries = () => {
+    return this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0
+  };
 
   render() {
     const { text, entities = [], onChange, } = this.props;
@@ -183,13 +186,13 @@ class EntityHighlighter extends React.Component {
             disabled={selectionStart === selectionEnd}
           >Add entity for selection</button>
         </div>
-        {selectionStart === selectionEnd && this.findEntities(selectionStart).length > 0 && (
+        {this.shouldDisplaySelectedEntries() && (
           <div style={{ marginTop: 10 }}>
             {this.findEntities(selectionStart).map((e, i) => (
               <span key={i}>
                 {text.substring(e.start, e.end)} ({e.label})
                 <button
-                  style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
+                  style={styles.deleteButton}
                   onClick={() => this.handleDelete(e)}
                 >
                   <span role="img" aria-label="Delete">🗑️</span>
