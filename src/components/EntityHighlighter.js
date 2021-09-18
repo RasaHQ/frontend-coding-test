@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { deleteEntity, hashString } from './helpers';
 
 const styles = {
   text: {},
@@ -48,17 +49,7 @@ const colors = [
   { name: 'aqua', bg: '#7fdbff' },
 ];
 
-function hashString(str) {
-  let hash = 0;
-  if (str.length === 0) return hash;
-  for (let i = 0; i < str.length; i += 1) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash &= hash; // Convert to 32bit integer
-  }
-  return hash > 0 ? hash : -hash;
-}
-
+// TODO: consider moving to its own component file
 const Highlight = ({ text, entity }) => {
   const start = text.substr(0, entity.start);
   const value = text.substr(entity.start, entity.end - entity.start);
@@ -72,11 +63,6 @@ const Highlight = ({ text, entity }) => {
     </div>
   );
 };
-
-const deleteEntity = (entity, entities ) => {
-  const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
-  return entities.filter((_, i) => i !== deleted)
-}
 
 class EntityHighlighter extends React.Component {
   state = { selectionStart: 0, selectionEnd: 0, text: '' };
