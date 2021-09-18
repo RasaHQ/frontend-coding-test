@@ -94,7 +94,7 @@ function EntityHighlighter({ text, entities, onChange }) {
       document.removeEventListener('click', selectionChangeHandler);
       document.removeEventListener('keydown', selectionChangeHandler);
     }
-  })
+  }, [])
 
   const handleTextChange = (event) =>{
     const newText = event.target.value;
