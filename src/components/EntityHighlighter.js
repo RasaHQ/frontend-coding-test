@@ -55,10 +55,7 @@ function hashString(str) {
 }
 
 class EntityHighlighter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { selectionStart: 0, selectionEnd: 0, text: '' };
-  }
+  state = { selectionStart: 0, selectionEnd: 0, text: '' };
 
   componentDidMount() {
     this.selectionChangeHandler = (event) => {
