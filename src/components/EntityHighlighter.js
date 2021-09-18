@@ -150,6 +150,7 @@ class EntityHighlighter extends React.Component {
     onChange(text, entities);
   }
 
+  // TODO: focus is not used. find out what it should used for or whether it should be removed.
   focus() {
     if (this.inputNode) this.inputNode.focus();
   }
