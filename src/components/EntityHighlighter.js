@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const styles = {
   text: {},
@@ -209,5 +210,15 @@ class EntityHighlighter extends React.Component {
     );
   }
 }
+
+EntityHighlighter.propTypes = {
+  text: PropTypes.string.isRequired,
+  entities: PropTypes.arrayOf(PropTypes.shape({
+    start: PropTypes.number.isRequired,
+    end: PropTypes.number.isRequired,
+    label: PropTypes.string.isRequired,
+  })),
+  onChange: PropTypes.func.isRequired,
+};
 
 export default EntityHighlighter;
