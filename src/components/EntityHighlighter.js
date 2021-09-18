@@ -59,6 +59,20 @@ function hashString(str) {
   return hash > 0 ? hash : -hash;
 }
 
+const Highlight = ({ text, entity }) => {
+  const start = text.substr(0, entity.start);
+  const value = text.substr(entity.start, entity.end - entity.start);
+  const end = text.substr(entity.end);
+  const color = colors[hashString(entity.label) % colors.length].bg;
+  return (
+    <div style={{ ...styles.zeroPos, ...styles.highlightText }}>
+      <span>{start}</span>
+      <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
+      <span>{end}</span>
+    </div>
+  );
+};
+
 const deleteEntity = (entity, entities ) => {
   const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
   return entities.filter((_, i) => i !== deleted)
@@ -170,7 +184,9 @@ class EntityHighlighter extends React.Component {
             value={text}
             rows={10}
           />
-          {entities.map((entity, index) => this.renderEntityHighlight(text, entity, index))}
+          {entities.map((entity, index) => (
+            <Highlight text={text} entity={entity} key={index} />
+          ))}
         </div>
         <br />
         <div>
