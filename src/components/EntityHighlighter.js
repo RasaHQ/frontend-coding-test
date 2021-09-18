@@ -162,12 +162,21 @@ class EntityHighlighter extends React.Component {
     this.props.onChange(this.props.text, deleteEntity(entity, this.props.entities));
   };
 
+  handleAddEntity = () => {
+    const newEntities = this.props.entities.concat({ 
+      start: this.state.selectionStart, 
+      end: this.state.selectionEnd, 
+      label: this.state.text 
+    })
+    this.props.onChange(this.props.text, newEntities)
+  }
+
   shouldDisplaySelectedEntries = () => {
     return this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0
   };
 
   render() {
-    const { text, entities = [], onChange, } = this.props;
+    const { text, entities = [], } = this.props;
     const { selectionStart, selectionEnd, text: stateText } = this.state;
 
     return (
@@ -198,7 +207,7 @@ class EntityHighlighter extends React.Component {
             disabled={selectionStart === selectionEnd}
           />
           <button
-            onClick={() => onChange(text, entities.concat({ start: selectionStart, end: selectionEnd, label: stateText }))}
+            onClick={this.handleAddEntity}
             disabled={selectionStart === selectionEnd}
           >Add entity for selection</button>
         </div>
