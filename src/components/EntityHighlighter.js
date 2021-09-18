@@ -151,8 +151,7 @@ class EntityHighlighter extends React.Component {
   deleteEntity = (entity) => {
     const { entities, onChange, text } = this.props;
     const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
-    entities.splice(deleted, 1);
-    onChange(text, entities);
+    onChange(text, entities.filter((_, i) => i !== deleted));
   }
 
   render() {
