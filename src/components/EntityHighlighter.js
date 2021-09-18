@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { deleteEntity, hashString } from './helpers';
+import { deleteEntity, hashString, updateEntitiesAfterTextChange } from './helpers';
 
 const styles = {
   text: {},
@@ -93,45 +93,7 @@ class EntityHighlighter extends React.Component {
   handleTextChange(event) {
     const { text: oldText, entities: oldEntities, onChange } = this.props;
     const text = event.target.value;
-    const entities = [];
-
-    // update the entity boudaries
-
-    oldEntities.forEach(oldEntity => {
-      const oldSelection = oldText.substr(oldEntity.start, oldEntity.end - oldEntity.start);
-
-      function findClosestStart(lastMatch) {
-        if (lastMatch == null) {
-          const index = text.indexOf(oldSelection);
-          if (index === -1) {
-            return index;
-          }
-          return findClosestStart(index);
-        }
-        const from = lastMatch + oldSelection.length;
-        const index = text.indexOf(oldSelection, from);
-        if (index === -1) {
-          return lastMatch;
-        }
-        const prevDiff = Math.abs(oldEntity.start - lastMatch);
-        const nextDiff = Math.abs(oldEntity.start - index);
-        if (prevDiff < nextDiff) {
-          return lastMatch;
-        }
-        return findClosestStart(index);
-      }
-      const start = findClosestStart();
-      if (start === -1) {
-        return;
-      }
-
-      entities.push({
-        ...oldEntity,
-        start,
-        end: start + oldSelection.length,
-      });
-    });
-
+    const entities = updateEntitiesAfterTextChange(text, oldText, oldEntities);
     onChange(text, entities);
   }
 

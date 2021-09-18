@@ -25,3 +25,53 @@ export function hashString(str) {
   }
   return hash > 0 ? hash : -hash;
 }
+
+/**
+ * Change the text looping over the entities list and recursively check if their start and end locations are still relevant. If not, update to the new locations. The function returns the new entities list.
+ * @param  {String} text
+ * @param  {String} oldText
+ * @param  {oldEntities} list
+ * @return {Array}
+ */
+export const updateEntitiesAfterTextChange = (text, oldText, oldEntities) => {
+  const entities = [];
+
+  // update the entity boundaries
+  oldEntities.forEach(oldEntity => {
+    const oldSelection = oldText.substr(oldEntity.start, oldEntity.end - oldEntity.start);
+
+    // TODO: for perf, move the function outside of the loop, preferably after it was tested properly.
+    function findClosestStart(lastMatch) {
+      if (lastMatch == null) {
+        const index = text.indexOf(oldSelection);
+        if (index === -1) {
+          return index;
+        }
+        return findClosestStart(index);
+      }
+      const from = lastMatch + oldSelection.length;
+      const index = text.indexOf(oldSelection, from);
+      if (index === -1) {
+        return lastMatch;
+      }
+      const prevDiff = Math.abs(oldEntity.start - lastMatch);
+      const nextDiff = Math.abs(oldEntity.start - index);
+      if (prevDiff < nextDiff) {
+        return lastMatch;
+      }
+      return findClosestStart(index);
+    }
+    const start = findClosestStart();
+    if (start === -1) {
+      return;
+    }
+
+    entities.push({
+      ...oldEntity,
+      start,
+      end: start + oldSelection.length,
+    });
+  });
+
+  return entities
+}
