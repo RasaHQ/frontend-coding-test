@@ -2,14 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { deleteEntity, hashString, updateEntitiesAfterTextChange } from './helpers';
 
-
-/*
-- refactor to react hooks
-- styled components
-- add component tests + react-testing-library
-- add prettier
-*/
-
 const styles = {
   text: {},
   highlightText: {
