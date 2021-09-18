@@ -11,6 +11,7 @@ export const deleteEntity = (entity = {}, entities = [] ) => {
 
 /**
  * Converts a string to a 32bit integer (used to generate a random number in order to pick a random number from a list)
+ * TODO: add test if considered unpredictable
  * @param  {String} str
  * @return {Number}
  */
