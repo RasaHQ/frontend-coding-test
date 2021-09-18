@@ -50,7 +50,7 @@ const colors = [
 ];
 
 // TODO: consider moving to its own component file
-const Highlight = ({ text, entity }) => {
+const HighlightedEntity = ({ text, entity }) => {
   const start = text.substr(0, entity.start);
   const value = text.substr(entity.start, entity.end - entity.start);
   const end = text.substr(entity.end);
@@ -180,7 +180,7 @@ class EntityHighlighter extends React.Component {
             rows={10}
           />
           {entities.map((entity, index) => (
-            <Highlight text={text} entity={entity} key={index} />
+            <HighlightedEntity text={text} entity={entity} key={index} />
           ))}
         </div>
         <br />
@@ -225,6 +225,15 @@ EntityHighlighter.propTypes = {
     label: PropTypes.string.isRequired,
   })),
   onChange: PropTypes.func.isRequired,
+};
+
+HighlightedEntity.propTypes = {
+  text: PropTypes.string.isRequired,
+  entity: PropTypes.shape({
+    start: PropTypes.number.isRequired,
+    end: PropTypes.number.isRequired,
+    label: PropTypes.string.isRequired,
+  }),
 };
 
 export default EntityHighlighter;
