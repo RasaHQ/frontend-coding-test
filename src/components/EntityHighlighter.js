@@ -2,6 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { deleteEntity, hashString, updateEntitiesAfterTextChange } from './helpers';
 
+
+/*
+- refactor to react hooks
+- styled components
+- add component tests + react-testing-library
+- add prettier
+*/
+
 const styles = {
   text: {},
   highlightText: {
@@ -64,119 +72,117 @@ const HighlightedEntity = ({ text, entity }) => {
   );
 };
 
-class EntityHighlighter extends React.Component {
-  state = { selectionStart: 0, selectionEnd: 0, text: '' };
+function EntityHighlighter({ text, entities, onChange }) {
+  const [highlighted, setHighlighted] = React.useState({
+    selectionStart: 0, 
+    selectionEnd: 0,
+  });
+  const [highlightText, setHighlightText] = React.useState('');
 
-  componentDidMount() {
-    document.addEventListener('select', this.selectionChangeHandler, false);
-    document.addEventListener('click', this.selectionChangeHandler, false);
-    document.addEventListener('keydown', this.selectionChangeHandler, false);
-  }
+  const inputNode = React.useRef(null);
 
-  componentWillUnmount() {
-    document.removeEventListener('select', this.selectionChangeHandler);
-    document.removeEventListener('click', this.selectionChangeHandler);
-    document.removeEventListener('keydown', this.selectionChangeHandler);
-  }
-
-  selectionChangeHandler = (event) => {
+  const selectionChangeHandler = (event) => {
+    console.log('TCL: ~ selectionChangeHandler ~ inputNode', inputNode)
     if (
-      event.target === this.inputNode
+      event.target === inputNode.current
     ) {
-      this.setState({
-        selectionStart: this.inputNode.selectionStart,
-        selectionEnd: this.inputNode.selectionEnd
+      setHighlighted({
+        selectionStart: inputNode.current.selectionStart,
+        selectionEnd: inputNode.current.selectionEnd
       });
     }
   };
 
-  handleTextChange(event) {
-    const { text: oldText, entities: oldEntities, onChange } = this.props;
-    const text = event.target.value;
-    const entities = updateEntitiesAfterTextChange(text, oldText, oldEntities);
-    onChange(text, entities);
+  React.useEffect(() => {
+    document.addEventListener('select', selectionChangeHandler, false);
+    document.addEventListener('click', selectionChangeHandler, false);
+    document.addEventListener('keydown', selectionChangeHandler, false);
+
+    return () => {
+      document.removeEventListener('select', selectionChangeHandler);
+      document.removeEventListener('click', selectionChangeHandler);
+      document.removeEventListener('keydown', selectionChangeHandler);
+    }
+  })
+
+  const handleTextChange = (event) =>{
+    const newText = event.target.value;
+    const newEntities = updateEntitiesAfterTextChange(newText, text, entities);
+    onChange(newText, newEntities);
   }
 
   // TODO: focus is not used. find out what it should used for or whether it should be removed.
-  focus() {
-    if (this.inputNode) this.inputNode.focus();
+  const focus = () =>{
+    if (inputNode) inputNode.current.focus();
   }
 
-  findEntities = (index) => {
-    return this.props.entities.filter(e => e.start <= index && e.end > index);
+  const findEntities = (index) => {
+    return entities.filter(e => e.start <= index && e.end > index);
   };
 
-  handleDelete = (entity) => {
-    this.props.onChange(this.props.text, deleteEntity(entity, this.props.entities));
+  const handleDelete = (entity) => {
+    onChange(text, deleteEntity(entity, entities));
   };
 
-  handleAddEntity = () => {
-    const newEntities = this.props.entities.concat({ 
-      start: this.state.selectionStart, 
-      end: this.state.selectionEnd, 
-      label: this.state.text 
+  const handleAddEntity = () => {
+    const newEntities = entities.concat({ 
+      start: highlighted.selectionStart, 
+      end: highlighted.selectionEnd, 
+      label: highlightText 
     })
-    this.props.onChange(this.props.text, newEntities)
+    onChange(text, newEntities)
   }
 
-  shouldDisplaySelectedEntries = () => {
-    return this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0
+  const shouldDisplaySelectedEntries = () => {
+    const {selectionStart, selectionEnd } = highlighted
+    return selectionStart === selectionEnd && findEntities(selectionStart).length > 0
   };
 
-  render() {
-    const { text, entities = [], } = this.props;
-    const { selectionStart, selectionEnd, text: stateText } = this.state;
-
-    return (
+  return (
+    <div>
+      <div style={{ position: 'relative' }}>
+        <textarea
+          style={styles.input}
+          ref={inputNode}
+          onChange={event => handleTextChange(event)}
+          value={text}
+          rows={10}
+        />
+        {entities.map((entity, index) => (
+          <HighlightedEntity text={text} entity={entity} key={index} />
+        ))}
+      </div>
+      <br />
       <div>
-        <div style={{ position: 'relative' }}>
-          <textarea
-            style={styles.input}
-            ref={node => {
-              if (node) {
-                this.inputNode = node;
-              }
-            }}
-            onChange={event => this.handleTextChange(event)}
-            value={text}
-            rows={10}
-          />
-          {entities.map((entity, index) => (
-            <HighlightedEntity text={text} entity={entity} key={index} />
+        <input
+          type="text"
+          placeholder="Entity label"
+          value={highlightText}
+          onChange={(event) => setHighlightText(event.target.value)}
+          disabled={highlighted.selectionStart === highlighted.selectionEnd}
+        />
+        <button
+          onClick={handleAddEntity}
+          disabled={highlighted.selectionStart === highlighted.selectionEnd}
+        >Add entity for selection</button>
+      </div>
+      {shouldDisplaySelectedEntries() && (
+        <div style={{ marginTop: 10 }}>
+          {findEntities(highlighted.selectionStart).map((e, i) => (
+            <span key={i}>
+              {text.substring(e.start, e.end)} ({e.label})
+              <button
+                style={styles.deleteButton}
+                onClick={() => handleDelete(e)}
+              >
+                <span role="img" aria-label="Delete">🗑️</span>
+              </button>
+            </span>
           ))}
         </div>
-        <br />
-        <div>
-          <input
-            type="text"
-            placeholder="Entity label"
-            value={stateText}
-            onChange={(event) => this.setState({ text: event.target.value })}
-            disabled={selectionStart === selectionEnd}
-          />
-          <button
-            onClick={this.handleAddEntity}
-            disabled={selectionStart === selectionEnd}
-          >Add entity for selection</button>
-        </div>
-        {this.shouldDisplaySelectedEntries() && (
-          <div style={{ marginTop: 10 }}>
-            {this.findEntities(selectionStart).map((e, i) => (
-              <span key={i}>
-                {text.substring(e.start, e.end)} ({e.label})
-                <button
-                  style={styles.deleteButton}
-                  onClick={() => this.handleDelete(e)}
-                >
-                  <span role="img" aria-label="Delete">🗑️</span>
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 }
 
 EntityHighlighter.propTypes = {

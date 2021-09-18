@@ -36,8 +36,8 @@ describe('updateEntitiesAfterTextChange', () => {
       { start: 10, end: 13, label: 'important'},
     ]
 
-    const text = 'This is a new test.';
-    const actual = updateEntitiesAfterTextChange(text, oldText, entities)
+    const newText = 'This is a new test.';
+    const actual = updateEntitiesAfterTextChange(newText, oldText, entities)
     const expected = [
       entities[0],
       { start: 14, end: 17, label: 'important'},
