@@ -149,14 +149,15 @@ class EntityHighlighter extends React.Component {
   };
 
   deleteEntity = (entity) => {
-    const entities = this.props.entities;
-    const deleted = this.props.entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
+    const { entities, onChange, text } = this.props;
+    const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
     entities.splice(deleted, 1);
-    this.props.onChange(this.props.text, entities);
+    onChange(text, entities);
   }
 
   render() {
-    const { text, entities = [] } = this.props;
+    const { text, entities = [], onChange, } = this.props;
+    const { selectionStart, selectionEnd, text: stateText } = this.state;
 
     return (
       <div>
@@ -179,20 +180,20 @@ class EntityHighlighter extends React.Component {
           <input
             type="text"
             placeholder="Entity label"
-            value={this.state.text}
+            value={stateText}
             onChange={(event) => this.setState({ text: event.target.value })}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
+            disabled={selectionStart === selectionEnd}
           />
           <button
-            onClick={() => this.props.onChange(text, entities.concat({ start: this.state.selectionStart, end: this.state.selectionEnd, label: this.state.text }))}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
+            onClick={() => onChange(text, entities.concat({ start: selectionStart, end: selectionEnd, label: stateText }))}
+            disabled={selectionStart === selectionEnd}
           >Add entity for selection</button>
         </div>
-        {this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0 && (
+        {selectionStart === selectionEnd && this.findEntities(selectionStart).length > 0 && (
           <div style={{ marginTop: 10 }}>
-            {this.findEntities(this.state.selectionStart).map((e,i) => (
+            {this.findEntities(selectionStart).map((e, i) => (
               <span key={i}>
-                {this.props.text.substring(e.start, e.end)} ({e.label})
+                {text.substring(e.start, e.end)} ({e.label})
                 <button
                   style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
                   onClick={() => this.deleteEntity(e)}
