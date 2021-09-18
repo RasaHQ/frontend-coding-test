@@ -54,6 +54,11 @@ function hashString(str) {
   return hash > 0 ? hash : -hash;
 }
 
+const deleteEntity = (entity, entities ) => {
+  const deleted = entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
+  return entities.filter((_, i) => i !== deleted)
+}
+
 class EntityHighlighter extends React.Component {
   state = { selectionStart: 0, selectionEnd: 0, text: '' };
 
@@ -134,18 +139,8 @@ class EntityHighlighter extends React.Component {
     return this.props.entities.filter(e => e.start <= index && e.end > index);
   };
 
-  renderEntityHighlight = (text, entity, key) => {
-    const start = text.substr(0, entity.start);
-    const value = text.substr(entity.start, entity.end - entity.start);
-    const end = text.substr(entity.end);
-    const color = colors[hashString(entity.label) % colors.length].bg;
-    return (
-      <div key={key} style={{ ...styles.zeroPos, ...styles.highlightText }}>
-        <span>{start}</span>
-        <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
-        <span>{end}</span>
-      </div>
-    );
+  handleDelete = (entity) => {
+    this.props.onChange(this.props.text, deleteEntity(entity, this.props.entities));
   };
 
   deleteEntity = (entity) => {
@@ -195,7 +190,7 @@ class EntityHighlighter extends React.Component {
                 {text.substring(e.start, e.end)} ({e.label})
                 <button
                   style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
-                  onClick={() => this.deleteEntity(e)}
+                  onClick={() => this.handleDelete(e)}
                 >
                   <span role="img" aria-label="Delete">🗑️</span>
                 </button>
