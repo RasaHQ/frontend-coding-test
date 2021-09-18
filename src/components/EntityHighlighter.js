@@ -77,7 +77,7 @@ function EntityHighlighter({ text, entities, onChange }) {
     selectionStart: 0, 
     selectionEnd: 0,
   });
-  const [highlightText, setHighlightText] = React.useState('');
+  const [entityLabel, setEntityLabel] = React.useState('');
 
   const inputNode = React.useRef(null);
 
@@ -128,9 +128,10 @@ function EntityHighlighter({ text, entities, onChange }) {
     const newEntities = entities.concat({ 
       start: highlighted.selectionStart, 
       end: highlighted.selectionEnd, 
-      label: highlightText 
-    })
-    onChange(text, newEntities)
+      label: entityLabel 
+    });
+    onChange(text, newEntities);
+    setEntityLabel('');
   }
 
   const shouldDisplaySelectedEntries = () => {
@@ -157,8 +158,8 @@ function EntityHighlighter({ text, entities, onChange }) {
         <input
           type="text"
           placeholder="Entity label"
-          value={highlightText}
-          onChange={(event) => setHighlightText(event.target.value)}
+          value={entityLabel}
+          onChange={(event) => setEntityLabel(event.target.value)}
           disabled={highlighted.selectionStart === highlighted.selectionEnd}
         />
         <button
