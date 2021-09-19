@@ -25,3 +25,9 @@ The instructions for completing the task can be found in the site that will laun
 - Add Styled Components (SC) and migrate from object styles to styling with SC.
 - Add react-testing-library and add component test.
 - Add and configure Prettier for consistent, headache-free code style (was annoying to work without, but making Prettier work would mean time wasted on configuring the tool).
+
+## Run tests
+
+```sh
+$ npm test
+```
