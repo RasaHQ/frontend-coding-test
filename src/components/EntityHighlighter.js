@@ -1,4 +1,6 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import { deleteEntity, hashString, updateEntitiesAfterTextChange } from './helpers';
 
 const styles = {
   text: {},
@@ -24,6 +26,11 @@ const styles = {
     width: '100%',
     resize: 'none',
   },
+  deleteButton: { 
+    border: '0 none', 
+    cursor: 'pointer', 
+    backgroundColor: 'transparent' 
+  },
 };
 
 const colors = [
@@ -42,172 +49,151 @@ const colors = [
   { name: 'aqua', bg: '#7fdbff' },
 ];
 
-function hashString(str) {
-  let hash = 0;
-  if (str.length === 0) return hash;
-  for (let i = 0; i < str.length; i += 1) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash &= hash; // Convert to 32bit integer
-  }
-  return hash > 0 ? hash : -hash;
-}
+// TODO: consider moving to its own component file
+const HighlightedEntity = ({ text, entity }) => {
+  const start = text.substr(0, entity.start);
+  const value = text.substr(entity.start, entity.end - entity.start);
+  const end = text.substr(entity.end);
+  const color = colors[hashString(entity.label) % colors.length].bg;
+  return (
+    <div style={{ ...styles.zeroPos, ...styles.highlightText }}>
+      <span>{start}</span>
+      <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
+      <span>{end}</span>
+    </div>
+  );
+};
 
-class EntityHighlighter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { selectionStart: 0, selectionEnd: 0, text: '' };
-  }
+function EntityHighlighter({ text, entities, onChange }) {
+  const [highlighted, setHighlighted] = React.useState({
+    selectionStart: 0, 
+    selectionEnd: 0,
+  });
+  const [entityLabel, setEntityLabel] = React.useState('');
 
-  componentDidMount() {
-    this.selectionChangeHandler = (event) => {
-      const target = event.target;
+  const inputNode = React.useRef(null);
 
-      if (
-        target === this.inputNode
-      ) {
-        this.setState({
-          selectionStart: this.inputNode.selectionStart,
-          selectionEnd: this.inputNode.selectionEnd
-        });
-      }
-    };
-    document.addEventListener('select', this.selectionChangeHandler, false);
-    document.addEventListener('click', this.selectionChangeHandler, false);
-    document.addEventListener('keydown', this.selectionChangeHandler, false);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('select', this.selectionChangeHandler);
-    document.removeEventListener('click', this.selectionChangeHandler);
-    document.removeEventListener('keydown', this.selectionChangeHandler);
-  }
-
-  handleTextChange(event) {
-    const { text: oldText, entities: oldEntities, onChange } = this.props;
-    const text = event.target.value;
-    const entities = [];
-
-    // update the entity boudaries
-
-    oldEntities.forEach(oldEntity => {
-      const oldSelection = oldText.substr(oldEntity.start, oldEntity.end - oldEntity.start);
-
-      function findClosestStart(lastMatch) {
-        if (lastMatch == null) {
-          const index = text.indexOf(oldSelection);
-          if (index === -1) {
-            return index;
-          }
-          return findClosestStart(index);
-        }
-        const from = lastMatch + oldSelection.length;
-        const index = text.indexOf(oldSelection, from);
-        if (index === -1) {
-          return lastMatch;
-        }
-        const prevDiff = Math.abs(oldEntity.start - lastMatch);
-        const nextDiff = Math.abs(oldEntity.start - index);
-        if (prevDiff < nextDiff) {
-          return lastMatch;
-        }
-        return findClosestStart(index);
-      }
-      const start = findClosestStart();
-      if (start === -1) {
-        return;
-      }
-
-      entities.push({
-        ...oldEntity,
-        start,
-        end: start + oldSelection.length,
+  const selectionChangeHandler = (event) => {
+    if (
+      event.target === inputNode.current
+    ) {
+      setHighlighted({
+        selectionStart: inputNode.current.selectionStart,
+        selectionEnd: inputNode.current.selectionEnd
       });
+    }
+  };
+
+  React.useEffect(() => {
+    document.addEventListener('select', selectionChangeHandler, false);
+    document.addEventListener('click', selectionChangeHandler, false);
+    document.addEventListener('keydown', selectionChangeHandler, false);
+
+    return () => {
+      document.removeEventListener('select', selectionChangeHandler);
+      document.removeEventListener('click', selectionChangeHandler);
+      document.removeEventListener('keydown', selectionChangeHandler);
+    }
+  }, [])
+
+  const handleTextChange = (event) =>{
+    const newText = event.target.value;
+    const newEntities = updateEntitiesAfterTextChange(newText, text, entities);
+    onChange(newText, newEntities);
+  }
+
+  // TODO: focus is not used. find out what it should used for or whether it should be removed.
+  const focus = () =>{
+    if (inputNode) inputNode.current.focus();
+  }
+
+  const findEntities = (index) => {
+    return entities.filter(e => e.start <= index && e.end > index);
+  };
+
+  const handleDelete = (entity) => {
+    onChange(text, deleteEntity(entity, entities));
+  };
+
+  const handleAddEntity = () => {
+    const newEntities = entities.concat({ 
+      start: highlighted.selectionStart, 
+      end: highlighted.selectionEnd, 
+      label: entityLabel 
     });
-
-    onChange(text, entities);
+    onChange(text, newEntities);
+    setEntityLabel('');
   }
 
-  focus() {
-    if (this.inputNode) this.inputNode.focus();
-  }
-
-  findEntities = (index) => {
-    return this.props.entities.filter(e => e.start <= index && e.end > index);
+  const shouldDisplaySelectedEntries = () => {
+    const {selectionStart, selectionEnd } = highlighted
+    return selectionStart === selectionEnd && findEntities(selectionStart).length > 0
   };
 
-  renderEntityHighlight = (text, entity, key) => {
-    const start = text.substr(0, entity.start);
-    const value = text.substr(entity.start, entity.end - entity.start);
-    const end = text.substr(entity.end);
-    const color = colors[hashString(entity.label) % colors.length].bg;
-    return (
-      <div key={key} style={{ ...styles.zeroPos, ...styles.highlightText }}>
-        <span>{start}</span>
-        <span style={{ opacity: 0.3, backgroundColor: color }}>{value}</span>
-        <span>{end}</span>
+  return (
+    <div>
+      <div style={{ position: 'relative' }}>
+        <textarea
+          style={styles.input}
+          ref={inputNode}
+          onChange={event => handleTextChange(event)}
+          value={text}
+          rows={10}
+        />
+        {entities.map((entity, index) => (
+          <HighlightedEntity text={text} entity={entity} key={index} />
+        ))}
       </div>
-    );
-  };
-
-  deleteEntity = (entity) => {
-    const entities = this.props.entities;
-    const deleted = this.props.entities.findIndex(e => e.start === entity.start && e.end === entity.end && e.label === entity.label);
-    entities.splice(deleted, 1);
-    this.props.onChange(this.props.text, entities);
-  }
-
-  render() {
-    const { text, entities = [] } = this.props;
-
-    return (
+      <br />
       <div>
-        <div style={{ position: 'relative' }}>
-          <textarea
-            style={styles.input}
-            ref={node => {
-              if (node) {
-                this.inputNode = node;
-              }
-            }}
-            onChange={event => this.handleTextChange(event)}
-            value={text}
-            rows={10}
-          />
-          {entities.map((entity, index) => this.renderEntityHighlight(text, entity, index))}
-        </div>
-        <br />
-        <div>
-          <input
-            type="text"
-            placeholder="Entity label"
-            value={this.state.text}
-            onChange={(event) => this.setState({ text: event.target.value })}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
-          />
-          <button
-            onClick={() => this.props.onChange(text, entities.concat({ start: this.state.selectionStart, end: this.state.selectionEnd, label: this.state.text }))}
-            disabled={this.state.selectionStart === this.state.selectionEnd}
-          >Add entity for selection</button>
-        </div>
-        {this.state.selectionStart === this.state.selectionEnd && this.findEntities(this.state.selectionStart).length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            {this.findEntities(this.state.selectionStart).map((e,i) => (
-              <span key={i}>
-                {this.props.text.substring(e.start, e.end)} ({e.label})
-                <button
-                  style={{ border: '0 none', cursor: 'pointer', backgroundColor: 'transparent' }}
-                  onClick={() => this.deleteEntity(e)}
-                >
-                  <span role="img" aria-label="Delete">🗑️</span>
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+        <input
+          type="text"
+          placeholder="Entity label"
+          value={entityLabel}
+          onChange={(event) => setEntityLabel(event.target.value)}
+          disabled={highlighted.selectionStart === highlighted.selectionEnd}
+        />
+        <button
+          onClick={handleAddEntity}
+          disabled={highlighted.selectionStart === highlighted.selectionEnd}
+        >Add entity for selection</button>
       </div>
-    );
-  }
+      {shouldDisplaySelectedEntries() && (
+        <div style={{ marginTop: 10 }}>
+          {findEntities(highlighted.selectionStart).map((e, i) => (
+            <span key={i}>
+              {text.substring(e.start, e.end)} ({e.label})
+              <button
+                style={styles.deleteButton}
+                onClick={() => handleDelete(e)}
+              >
+                <span role="img" aria-label="Delete">🗑️</span>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
+
+EntityHighlighter.propTypes = {
+  text: PropTypes.string.isRequired,
+  entities: PropTypes.arrayOf(PropTypes.shape({
+    start: PropTypes.number.isRequired,
+    end: PropTypes.number.isRequired,
+    label: PropTypes.string.isRequired,
+  })),
+  onChange: PropTypes.func.isRequired,
+};
+
+HighlightedEntity.propTypes = {
+  text: PropTypes.string.isRequired,
+  entity: PropTypes.shape({
+    start: PropTypes.number.isRequired,
+    end: PropTypes.number.isRequired,
+    label: PropTypes.string.isRequired,
+  }),
+};
 
 export default EntityHighlighter;
